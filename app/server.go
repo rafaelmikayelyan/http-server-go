@@ -43,6 +43,16 @@ func handleConnection(connection net.Conn) {
 
 func handleGetRequest(connection net.Conn, request *http.Request) {
 	path := request.URL.Path
+	encoding := request.Header.Get("Accept-Encoding")
+	if len(encoding) > 0 {
+		if encoding == "gzip" {
+			connection.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", len(path[6:]), path[6:])))
+			return
+		} else {
+			connection.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", len(path[6:]), path[6:])))
+		}
+	}
+
 	if path == "/" {
 		connection.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
 		return
