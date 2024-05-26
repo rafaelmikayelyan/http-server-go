@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -45,7 +46,7 @@ func handleGetRequest(connection net.Conn, request *http.Request) {
 	path := request.URL.Path
 	encoding := request.Header.Get("Accept-Encoding")
 	if len(encoding) > 0 {
-		if encoding == "gzip" {
+		if isIncluded(encoding, "gzip") {
 			connection.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", len(path[6:]), path[6:])))
 			return
 		} else {
@@ -59,7 +60,7 @@ func handleGetRequest(connection net.Conn, request *http.Request) {
 	} else if path[0:6] == "/echo/" {
 		connection.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", len(path[6:]), path[6:])))
 		return
-	} else if path[0:7] == "/files/" {
+	} else if path[0:7] == "/files/" && len(path) > 7 {
 		file, err := os.ReadFile(os.Args[2] + path[7:])
 		if err != nil {
 			fmt.Println("Error opening file: ", err.Error())
@@ -90,3 +91,14 @@ func handlePostRequest(connection net.Conn, request *http.Request) {
 	}
 	return
 }
+
+func isIncluded(longString string, shortString string) bool {
+	splited := strings.Split(longString, ",")
+	for _, value := range splited {
+		if strings.TrimSpace(value) == shortString {
+			return true
+		}
+	}
+	return false
+}
+
