@@ -15,18 +15,24 @@ func main() {
 		os.Exit(1)
 	}
 
-	connection, err := listener.Accept()
-	if err != nil {
-		fmt.Println("Error accepting connection: ", err.Error())
-		os.Exit(1)
+	for {
+		connection, err := listener.Accept()
+		if err != nil {
+			fmt.Println("Error accepting connection: ", err.Error())
+			os.Exit(1)
+		}
+
+		go handleConnection(connection)
 	}
-	
+}
+
+func handleConnection(connection net.Conn) {
 	request, err := http.ReadRequest(bufio.NewReader(connection))
 	if err != nil {
 		fmt.Println("Error reading request: ", err.Error())
 		os.Exit(1)
 	}
-	
+
 	path := request.URL.Path
 	if path == "/" {
 		connection.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
@@ -41,6 +47,6 @@ func main() {
 		connection.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", len(agent), agent)))
 		return
 	}
-	
+
 	connection.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
 }
