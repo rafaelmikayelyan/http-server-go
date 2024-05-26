@@ -36,5 +36,11 @@ func main() {
 		return
 	}
 
+	agent := request.UserAgent()
+	if len(agent) > 0 {
+		connection.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", len(agent), agent)))
+		return
+	}
+	
 	connection.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
 }
