@@ -40,6 +40,15 @@ func handleConnection(connection net.Conn) {
 	} else if path[0:6] == "/echo/" {
 		connection.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", len(path[6:]), path[6:])))
 		return
+	} else if path[0:7] == "/files/" {
+		file, err := os.ReadFile(os.Args[2] + path[7:])
+		if err != nil {
+			fmt.Println("Error opening file: ", err.Error())
+			connection.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+		} else {
+			connection.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: %d\r\n\r\n%s", len(file), file)))
+		}
+			return
 	}
 
 	agent := request.UserAgent()
