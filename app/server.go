@@ -35,13 +35,13 @@ func handleConnection(connection net.Conn) {
 	}
 
 	if request.Method == "GET" {
-		hangtleGetRequest(connection, request)
+		handleGetRequest(connection, request)
 	} else if request.Method == "POST" {
-		hangtlePostRequest(connection, request)
+		handlePostRequest(connection, request)
 	}
 }
 
-func hangtleGetRequest(connection net.Conn, request *http.Request) {
+func handleGetRequest(connection net.Conn, request *http.Request) {
 	path := request.URL.Path
 	if path == "/" {
 		connection.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
@@ -69,7 +69,7 @@ func hangtleGetRequest(connection net.Conn, request *http.Request) {
 	connection.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
 }
 
-func hangtlePostRequest(connection net.Conn, request *http.Request) {
+func handlePostRequest(connection net.Conn, request *http.Request) {
 	body, err := io.ReadAll(request.Body)
 	if err != nil {
 		fmt.Println("Error uploading file: ", err.Error())
