@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -33,6 +34,14 @@ func handleConnection(connection net.Conn) {
 		os.Exit(1)
 	}
 
+	if request.Method == "GET" {
+		hangtleGetRequest(connection, request)
+	} else if request.Method == "POST" {
+		hangtlePostRequest(connection, request)
+	}
+}
+
+func hangtleGetRequest(connection net.Conn, request *http.Request) {
 	path := request.URL.Path
 	if path == "/" {
 		connection.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
@@ -48,7 +57,7 @@ func handleConnection(connection net.Conn) {
 		} else {
 			connection.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: %d\r\n\r\n%s", len(file), file)))
 		}
-			return
+		return
 	}
 
 	agent := request.UserAgent()
@@ -58,4 +67,16 @@ func handleConnection(connection net.Conn) {
 	}
 
 	connection.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+}
+
+func hangtlePostRequest(connection net.Conn, request *http.Request) {
+	body, err := io.ReadAll(request.Body)
+	if err != nil {
+		fmt.Println("Error uploading file: ", err.Error())
+		connection.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+	} else {
+		os.WriteFile(os.Args[2] + request.URL.Path[7:], []byte(body), 0644)
+		connection.Write([]byte(fmt.Sprintf("HTTP/1.1 201 Created\r\n\r\n")))
+	}
+	return
 }
