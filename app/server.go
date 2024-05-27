@@ -2,6 +2,8 @@ package main
 
 import (
 	"bufio"
+	"bytes"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"net"
@@ -47,7 +49,11 @@ func handleGetRequest(connection net.Conn, request *http.Request) {
 	encoding := request.Header.Get("Accept-Encoding")
 	if len(encoding) > 0 {
 		if isIncluded(encoding, "gzip") {
-			connection.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", len(path[6:]), path[6:])))
+			var buffer bytes.Buffer
+			writer := gzip.NewWriter(&buffer)
+			writer.Write([]byte(path[6:]))
+			writer.Close()
+			connection.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", len(buffer.String()), buffer.String())))
 			return
 		} else {
 			connection.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", len(path[6:]), path[6:])))
@@ -60,7 +66,7 @@ func handleGetRequest(connection net.Conn, request *http.Request) {
 	} else if path[0:6] == "/echo/" {
 		connection.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", len(path[6:]), path[6:])))
 		return
-	} else if path[0:7] == "/files/" && len(path) > 7 {
+	} else if len(path) > 6 && path[0:7] == "/files/" {
 		file, err := os.ReadFile(os.Args[2] + path[7:])
 		if err != nil {
 			fmt.Println("Error opening file: ", err.Error())
@@ -101,4 +107,3 @@ func isIncluded(longString string, shortString string) bool {
 	}
 	return false
 }
-
